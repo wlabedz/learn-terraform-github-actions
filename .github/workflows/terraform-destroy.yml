@@ -41,7 +41,7 @@ jobs:
           destroy: true
 
       - name: Destroy
-        uses: terraform destroy
+        run: terraform destroy
         if: fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable
         id: destroy  
         with:
