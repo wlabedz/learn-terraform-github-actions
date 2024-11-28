@@ -1,9 +1,11 @@
 name: Create Terraform Configuration
 
+#setting the workflow to be run manually.
 on:
-  workflow_dispatch:  # This ensures the workflow can be triggered manually.
+  workflow_dispatch:  
 
 env:
+  #environment variables to be used across the workflow
   TF_CLOUD_ORGANIZATION: "organization_fhtechnikum"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
   TF_WORKSPACE: "learn-terraform-github-actions"
@@ -12,15 +14,19 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
+    #not to cause infinite loops
     if: github.repository != 'hashicorp-education/learn-terraform-github-actions'
     name: "Terraform Create"
     permissions:
       contents: read
 
     steps:
+        #step doing the checkout of the code in git so that terraform can 'see' it
       - name: Checkout repository
         uses: actions/checkout@v3
 
+        #uploading the terraform configuration to terraform cloud
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
         id: apply-upload
@@ -28,13 +34,15 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
+        #creating an apply run in terraform 
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
         id: apply-run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
-          
+
+        #applying the configuration if the apply is confirmable 
       - name: Apply
         uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.0.0
         if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
