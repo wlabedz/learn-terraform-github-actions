@@ -44,6 +44,3 @@ jobs:
         run: terraform destroy
         if: fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable
         id: destroy  
-        with:
-          run: ${{ steps.destroy-run.outputs.run_id }}
-          comment: "Destroy Run from GitHub Actions CI ${{ github.sha }}" 
