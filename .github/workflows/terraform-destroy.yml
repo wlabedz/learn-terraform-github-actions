@@ -1,46 +1,30 @@
 name: Destroy Terraform Configuration
 
 on:
-  workflow_dispatch: 
-
-env:
-  TF_CLOUD_ORGANIZATION: "organization_fhtechnikum"
-  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"  
-  TF_WORKSPACE: "learn-terraform-github-actions"  
-  CONFIG_DIRECTORY: "./" 
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (e.g., production, staging)'
+        required: true
+        default: 'production'
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    if: github.repository != 'hashicorp-education/learn-terraform-github-actions'
-
-    name: "Terraform Destroy"
-    
-    permissions:
-      contents: read
-
     steps:
-      
       - name: Checkout repository
-        uses: actions/checkout@v3 
+        uses: actions/checkout@v3
 
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0 
-        id: destroy-upload 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
-          workspace: ${{ env.TF_WORKSPACE }} 
-          directory: ${{ env.CONFIG_DIRECTORY }} 
+          terraform_version: '1.5.0'
 
-      - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0 
-        id: destroy-run 
-        with:
-          workspace: ${{ env.TF_WORKSPACE }} 
-          configuration_version: ${{ steps.destroy-upload.outputs.configuration_version_id }} 
-          destroy: true
+      - name: Initialize Terraform
+        run: terraform init
 
-      - name: Destroy
-        run: terraform destroy
-        if: fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable
-        id: destroy  
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+        env:
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
